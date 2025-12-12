@@ -1,3 +1,71 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
-    name: rest
+    name: ${SPRING_APPLICATION_NAME}
+
+  datasource:
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:3}
+      minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:1}
+      idle-timeout: ${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:60000}
+      max-lifetime: ${SPRING_DATASOURCE_HIKARI_MAX_LIFETIME:180000}
+      connection-timeout: ${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:10000}
+
+  jpa:
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.MySQLDialect}
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:none}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
+        jdbc.time_zone: ${SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_TIME_ZONE:UTC}
+
+  mvc:
+    throw-exception-if-no-handler-found: ${SPRING_MVC_THROW_EXCEPTION_IF_NO_HANDLER_FOUND:false}
+  web:
+    resources:
+      add-mappings: ${SPRING_WEB_RESOURCES_ADD_MAPPINGS:true}
+
+  main:
+    banner-mode: ${SPRING_MAIN_BANNER_MODE:console}
+    banner-location: ${SPRING_MAIN_BANNER_LOCATION:classpath:banner.txt}
+    banner:
+      charset: ${SPRING_MAIN_BANNER_CHARSET:UTF-8}
+
+jackson:
+  time-zone: ${JACKSON_TIMEZONE:America/Bogota}
+
+server:
+  port: ${SERVER_PORT:8001}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:*}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+      probes:
+        enabled: ${MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED:true}
+  health:
+    livenessstate:
+      enabled: ${MANAGEMENT_HEALTH_LIVENESSSTATE_ENABLED:true}
+    readinessstate:
+      enabled: ${MANAGEMENT_HEALTH_READINESSSTATE_ENABLED:true}
+
+logging:
+  folder-path: ${LOGGING_FOLDER_PATH:./logs/}
+  max-file-size: ${LOGGING_MAX_FILE_SIZE:10MB}
+  timezone: ${LOGGING_TIMEZONE:America/Bogota}
+  level:
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET}
