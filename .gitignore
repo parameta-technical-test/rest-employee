@@ -1,0 +1,57 @@
+#  GENERIC / OS FILES
+.DS_Store
+Thumbs.db
+
+#  ENVIRONMENT FILES
+.env
+
+#  MAVEN / GRADLE BUILDS
+target/
+build/
+out/
+
+# Keep target inside src (if any)
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+#  MAVEN WRAPPER
+.mvn/wrapper/maven-wrapper.jar
+
+#  INTELLIJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+.idea_modules/
+out/
+.classpath
+.project
+
+#  STS / ECLIPSE
+.apt_generated/
+.factorypath/
+.settings/
+.springBeans/
+.sts4-cache/
+
+#  NETBEANS
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+#  VS CODE
+.vscode/
+
+#  LOG FILES
+logs/
+*.log
+
+#  TEMP FILES
+*.tmp
+*.swp
+*.swo
