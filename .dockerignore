@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Maven
+target
+**/target
+.m2
+**/.m2
+
+# Node / Front
+node_modules
+**/node_modules
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Logs
+*.log
+logs
+
+# Env / Jenkins
+.env
+Jenkinsfile
