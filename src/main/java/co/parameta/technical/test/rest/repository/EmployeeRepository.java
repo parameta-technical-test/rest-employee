@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EmployeeRepository extends JpaRepository<EmployeeEntity, Integer> {
 
-    EmployeeEntity findByTypeDocument_codeAndNumberDocument(String codeDocument, String numberDocument);
+    EmployeeEntity findByTypeDocument_codeAndDocumentNumber(String codeDocument, String numberDocument);
 
 }

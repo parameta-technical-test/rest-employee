@@ -17,6 +17,7 @@ import co.parameta.technical.test.rest.util.mapper.EmployeeMapper;
 import co.parameta.technical.test.rest.util.mapper.JsonToPojoMapper;
 import co.parameta.technical.test.rest.util.mapper.PojoToJsonMapper;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ValidationEmployeeService implements IValidationEmployeeService {
 
     private final IGroovieScriptExecutorService groovyScriptExecutorService;
@@ -90,7 +91,7 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                 pojoToJsonMapper.toResponseEmployeeDto(
                         employeeResponse,
                         employeeMapper.toDto(
-                                employeeRepository.findByTypeDocument_codeAndNumberDocument(
+                                employeeRepository.findByTypeDocument_codeAndDocumentNumber(
                                         employeeRequest.getTypeDocument(),
                                         employeeRequest.getDocumentNumber()
                                 )
