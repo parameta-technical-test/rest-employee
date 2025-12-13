@@ -84,8 +84,26 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                         jsonToPojoMapper.toSaveEmployeeRequest(
                                 employeeRequest,
                                 jwtService.getCodeFromToken(jwtService.getTokenFromHeader())
-                        )
+                        ),
+                        message -> {
+                            if (message instanceof org.springframework.ws.soap.SoapMessage soapMessage) {
+
+                                var soapHeader = soapMessage.getSoapHeader();
+                                if (soapHeader == null) {
+                                    soapHeader = soapMessage.getSoapHeader();
+                                }
+
+                                soapHeader.addHeaderElement(
+                                        new javax.xml.namespace.QName(
+                                                "http://schemas.xmlsoap.org/ws/2002/12/secext",
+                                                "Authorization",
+                                                "wsse"
+                                        )
+                                ).setText("Bearer " + jwtService.getTokenFromHeader());
+                            }
+                        }
                 );
+
 
         ResponseEmployeeDTO responseEmployee =
                 pojoToJsonMapper.toResponseEmployeeDto(

@@ -1,6 +1,7 @@
 package co.parameta.technical.test.rest.util.mapper;
 
 import co.parameta.technical.test.commons.pojo.*;
+import co.parameta.technical.test.commons.util.helper.GeneralUtil;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
 import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
 import org.mapstruct.Mapper;
@@ -16,29 +17,59 @@ public interface JsonToPojoMapper {
         if (employeeRequest == null) {
             return null;
         }
+
         EmployeePojo employeePojo = new EmployeePojo();
-        employeePojo.setNames(employeeRequest.getNames());
-        employeePojo.setLastNames(employeeRequest.getLastNames());
+
+        employeePojo.setNames(
+                GeneralUtil.get(employeeRequest::getNames, null)
+        );
+
+        employeePojo.setLastNames(
+                GeneralUtil.get(employeeRequest::getLastNames, null)
+        );
+
         TypeDocumentPojo typeDocumentPojo = new TypeDocumentPojo();
-        typeDocumentPojo.setCode(employeeRequest.getTypeDocument());
+        typeDocumentPojo.setCode(
+                GeneralUtil.get(employeeRequest::getTypeDocument, null)
+        );
         employeePojo.setTypeDocument(typeDocumentPojo);
-        employeePojo.setDocumentNumber(employeeRequest.getDocumentNumber());
+
+        employeePojo.setDocumentNumber(
+                GeneralUtil.get(employeeRequest::getDocumentNumber, null)
+        );
+
         employeePojo.setDateOfBirth(
-                GeneralRestUtil.fromString(employeeRequest.getDateOfBirth())
+                GeneralUtil.get(
+                        () -> GeneralRestUtil.fromString(employeeRequest.getDateOfBirth()),
+                        null
+                )
         );
+
         employeePojo.setDateAffiliationCompany(
-                GeneralRestUtil.fromString(employeeRequest.getDateAffiliationCompany())
+                GeneralUtil.get(
+                        () -> GeneralRestUtil.fromString(employeeRequest.getDateAffiliationCompany()),
+                        null
+                )
         );
+
         PositionPojo positionPojo = new PositionPojo();
-        positionPojo.setCode(employeeRequest.getPosition());
+        positionPojo.setCode(
+                GeneralUtil.get(employeeRequest::getPosition, null)
+        );
         employeePojo.setPosition(positionPojo);
-        employeePojo.setSalary(employeeRequest.getSalary());
+
+        employeePojo.setSalary(
+                GeneralUtil.get(employeeRequest::getSalary, null)
+        );
+
         AdministratorUserPojo administratorUserPojo = new AdministratorUserPojo();
         administratorUserPojo.setCode(administratorUserCode);
         employeePojo.setAdministratorUser(administratorUserPojo);
+
         SaveEmployeeRequestPojo request = new SaveEmployeeRequestPojo();
         request.setEmployee(employeePojo);
+
         return request;
     }
-
 }
+

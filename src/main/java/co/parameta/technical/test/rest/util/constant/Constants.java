@@ -3,7 +3,7 @@ package co.parameta.technical.test.rest.util.constant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class Constants {
+public final class Constants {
 
     private Constants() {
     }
@@ -12,12 +12,49 @@ public class Constants {
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("dd/MM/yyyy"),
             DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+            DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+            DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+            DateTimeFormatter.ofPattern("yyyy.MM.dd"),
+
+            DateTimeFormatter.ofPattern("yyyyMMdd"),
+            DateTimeFormatter.ofPattern("ddMMyyyy"),
+
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"),
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss"),
+            DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"),
+
+            DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("ddMMyyyy HH:mm:ss"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"),
+
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"),
+            DateTimeFormatter.ofPattern("yyyyMMdd HH:mm"),
+            DateTimeFormatter.ofPattern("ddMMyyyy HH:mm"),
+
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
+
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"),
+
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+
             DateTimeFormatter.ISO_LOCAL_DATE,
             DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-            DateTimeFormatter.ISO_OFFSET_DATE_TIME
+            DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+            DateTimeFormatter.ISO_ZONED_DATE_TIME,
+            DateTimeFormatter.ISO_INSTANT
     );
 
     public static final String LOG_EXECUTING_SCRIPT =

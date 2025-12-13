@@ -10,7 +10,7 @@ import java.util.*;
 
 import static co.parameta.technical.test.rest.util.constant.Constants.*;
 
-public class GeneralRestUtil {
+public final class GeneralRestUtil {
 
     public static boolean isNullOrBlank(Object value) {
         if (value == null) {
@@ -33,44 +33,92 @@ public class GeneralRestUtil {
     }
 
     public static boolean isValidDateFormat(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null) {
             return false;
         }
 
+        String v = value.trim();
+        if (v.isEmpty()) {
+            return false;
+        }
+
+        v = v.replaceAll("\\s+", " ");
+
         for (DateTimeFormatter formatter : FORMATTERS) {
-            if (tryParse(value, formatter)) {
+            if (tryParseSmart(v, formatter)) {
                 return true;
             }
         }
+
+        return false;
+    }
+
+    private static boolean tryParseSmart(String value, DateTimeFormatter formatter) {
+        try {
+            LocalDate.parse(value, formatter);
+            return true;
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            LocalDateTime.parse(value, formatter);
+            return true;
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            OffsetDateTime.parse(value, formatter);
+            return true;
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            Instant.parse(value);
+            return true;
+        } catch (Exception ignored) {}
+
         return false;
     }
 
     public static Date parseToDate(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null) {
             return null;
         }
 
+        String v = value.trim();
+        if (v.isEmpty()) {
+            return null;
+        }
+
+        v = v.replaceAll("\\s+", " ");
+
+        try {
+            return Date.from(Instant.parse(v));
+        } catch (Exception ignored) {}
+
         for (DateTimeFormatter formatter : FORMATTERS) {
+
             try {
-                LocalDate ld = LocalDate.parse(value, formatter);
-                return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                OffsetDateTime odt = OffsetDateTime.parse(v, formatter);
+                return Date.from(odt.toInstant());
             } catch (DateTimeParseException ignored) {}
 
             try {
-                LocalDateTime ldt = LocalDateTime.parse(value, formatter);
+                ZonedDateTime zdt = ZonedDateTime.parse(v, formatter);
+                return Date.from(zdt.toInstant());
+            } catch (DateTimeParseException ignored) {}
+
+            try {
+                LocalDateTime ldt = LocalDateTime.parse(v, formatter);
                 return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
             } catch (DateTimeParseException ignored) {}
 
             try {
-                OffsetDateTime odt = OffsetDateTime.parse(value, formatter);
-                return Date.from(odt.toInstant());
+                LocalDate ld = LocalDate.parse(v, formatter);
+                return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
             } catch (DateTimeParseException ignored) {}
         }
 
-        throw new IllegalArgumentException(
-                String.format(INVALID_DATE_FORMAT, value)
-        );
+        throw new IllegalArgumentException(String.format(INVALID_DATE_FORMAT, v));
     }
+
 
     private static boolean tryParse(String value, DateTimeFormatter formatter) {
         try {
