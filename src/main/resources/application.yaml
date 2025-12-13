@@ -66,6 +66,10 @@ logging:
   timezone: ${LOGGING_TIMEZONE:America/Bogota}
   level:
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: DEBUG
-
 jwt:
   secret: ${JWT_SECRET}
+
+soap:
+  service:
+    endpoint: ${SOAP_SERVICE_ENDPOINT}
+
