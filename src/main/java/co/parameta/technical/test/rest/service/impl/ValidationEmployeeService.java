@@ -8,20 +8,18 @@ import co.parameta.technical.test.commons.util.mapper.ScriptValidationMapper;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
 import co.parameta.technical.test.rest.dto.ResponseEmployeeDTO;
 import co.parameta.technical.test.rest.dto.ResponseValidationGroovieDTO;
-import co.parameta.technical.test.rest.repository.EmployeeRepository;
 import co.parameta.technical.test.rest.repository.ScriptValidationRepository;
-import co.parameta.technical.test.rest.service.IGroovieScriptExecutorService;
-import co.parameta.technical.test.rest.service.IValidationEmployeeService;
+import co.parameta.technical.test.rest.service.*;
 import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
-import co.parameta.technical.test.rest.util.mapper.EmployeeMapper;
 import co.parameta.technical.test.rest.util.mapper.JsonToPojoMapper;
 import co.parameta.technical.test.rest.util.mapper.PojoToJsonMapper;
-import lombok.AllArgsConstructor;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.ws.client.core.WebServiceTemplate;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpUrlConnection;
 
 import java.util.*;
 
@@ -35,7 +33,6 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
 
     private final IGroovieScriptExecutorService groovyScriptExecutorService;
 
-    @Qualifier("rest-script")
     private final ScriptValidationRepository scriptValidationRepository;
 
     private final ScriptValidationMapper scriptValidationMapper;
@@ -43,11 +40,11 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
     private final WebServiceTemplate webServiceTemplate;
     private final JsonToPojoMapper jsonToPojoMapper;
     private final PojoToJsonMapper pojoToJsonMapper;
-    private final EmployeeRepository employeeRepository;
-    private final EmployeeMapper employeeMapper;
+    private final IPrepareMailDeliveryService iPrepareMailDeliveryService;
+
 
     @Override
-    public ResponseGeneralDTO validationEmployee(EmployeeRequestDTO employeeRequest) {
+    public ResponseGeneralDTO validationEmployee(EmployeeRequestDTO employeeRequest) throws MessagingException {
 
         ResponseGeneralDTO response = new ResponseGeneralDTO();
         response.setStatus(HTTP_OK);
@@ -86,40 +83,38 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                                 jwtService.getCodeFromToken(jwtService.getTokenFromHeader())
                         ),
                         message -> {
-                            if (message instanceof org.springframework.ws.soap.SoapMessage soapMessage) {
+                            var transportContext = TransportContextHolder.getTransportContext();
+                            var connection = (HttpUrlConnection) transportContext.getConnection();
 
-                                var soapHeader = soapMessage.getSoapHeader();
-                                if (soapHeader == null) {
-                                    soapHeader = soapMessage.getSoapHeader();
-                                }
-
-                                soapHeader.addHeaderElement(
-                                        new javax.xml.namespace.QName(
-                                                "http://schemas.xmlsoap.org/ws/2002/12/secext",
-                                                "Authorization",
-                                                "wsse"
-                                        )
-                                ).setText("Bearer " + jwtService.getTokenFromHeader());
-                            }
+                            connection.addRequestHeader(
+                                    "Authorization",
+                                    "Bearer " + jwtService.getTokenFromHeader()
+                            );
                         }
                 );
 
+        int status = GeneralUtil.mapToValueObject(GeneralUtil.get(() -> employeeResponse.getResponse().getStatus(), null), Integer.class, null);
 
-        ResponseEmployeeDTO responseEmployee =
-                pojoToJsonMapper.toResponseEmployeeDto(
-                        employeeResponse,
-                        employeeMapper.toDto(
-                                employeeRepository.findByTypeDocument_codeAndDocumentNumber(
-                                        employeeRequest.getTypeDocument(),
-                                        employeeRequest.getDocumentNumber()
-                                )
-                        )
-                );
+        if(status != 500){
+            ResponseEmployeeDTO responseEmployee =
+                    pojoToJsonMapper.toResponseEmployeeDto(
+                            employeeResponse,
+                            employeeRequest
+                    );
+            response.setData(responseEmployee);
+        }
 
-        response.setStatus(HTTP_OK);
-        response.setMessage(EMPLOYEE_SAVED_SUCCESSFULLY);
-        response.setData(responseEmployee);
+
+        if(!GeneralRestUtil.isNullOrBlank(employeeRequest.getEmail())){
+            iPrepareMailDeliveryService.prepareMailDelivery(employeeRequest);
+        }
+
+        response.setStatus(status);
+        response.setMessage(GeneralUtil.get(() -> employeeResponse.getResponse().getMessage(), null));
 
         return response;
     }
+
+
+
 }

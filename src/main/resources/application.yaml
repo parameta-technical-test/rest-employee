@@ -1,4 +1,15 @@
 spring:
+  mail:
+    host: ${HOST_SERVER_SMTP}
+    port: ${PORT_SERVER_SMTP}
+    username: ${USERNAME_SERVER_SMTP}
+    password: ${PASSWORD_SERVER_SMTP}
+    properties:
+      mail:
+        smtp:
+          auth: ${AUTH_SERVER_SMTP}
+          starttls:
+            enable: ${ENABLE_STARTTLS_SMTP}
   config:
     import: optional:file:.env[.properties]
   application:
@@ -73,3 +84,7 @@ soap:
   service:
     endpoint: ${SOAP_SERVICE_ENDPOINT}
 
+aws:
+  region: ${AWS_REGION}
+  s3:
+    bucket: ${AWS_NAME_BUCKET}

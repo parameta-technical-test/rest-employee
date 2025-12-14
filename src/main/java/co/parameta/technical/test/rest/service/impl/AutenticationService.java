@@ -45,7 +45,6 @@ public class AutenticationService implements IAutenticationService {
     private final ITokenBlacklistService iTokenBlacklistService;
     private final BlacklistTokenRepository blacklistTokenRepository;
 
-    @Qualifier("rest-administrator")
     private final AdministratorUserRepository administratorUserRepository;
 
     private final AdministratorUserMapper administratorUserMapper;

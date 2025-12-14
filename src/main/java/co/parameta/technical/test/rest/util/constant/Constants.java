@@ -1,5 +1,8 @@
 package co.parameta.technical.test.rest.util.constant;
 
+import com.lowagie.text.Font;
+
+import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -118,6 +121,9 @@ public final class Constants {
     public static final String INVALID_DATE_VALUE = "Invalid date value: %s. Supported formats: yyyy-MM-dd, yyyy-MM-ddTHH:mm:ss, yyyy-MM-ddTHH:mm:ssZ";
     public static final String DATATYPE_FACTORY_INIT_ERROR = "Could not initialize DatatypeFactory";
     public static final String DATE_CONVERSION_ERROR = "Error converting date: %s";
+
+    public static  final Font FOOTER_FONT = new Font(Font.HELVETICA, 9, Font.NORMAL, new Color(120, 120, 120));
+
 
 }
 

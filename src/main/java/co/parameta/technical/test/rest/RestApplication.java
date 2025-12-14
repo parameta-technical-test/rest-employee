@@ -5,12 +5,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @ComponentScan(
 		basePackages = "co.parameta.technical.test"
 )
 @Import({ApplicationConfig.class})
+@EnableAsync
 public class RestApplication {
 
 	public static void main(String[] args) {

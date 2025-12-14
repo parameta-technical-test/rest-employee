@@ -7,6 +7,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static co.parameta.technical.test.rest.util.constant.Constants.*;
 
@@ -177,4 +178,31 @@ public final class GeneralRestUtil {
             );
         }
     }
+
+    public static String safePrefix(String value, int length) {
+        if (value == null || value.isBlank()) {
+            return "XX";
+        }
+        String clean = value.replaceAll("[^A-Za-z]", "").toUpperCase();
+        return clean.length() >= length
+                ? clean.substring(0, length)
+                : String.format("%-" + length + "s", clean).replace(' ', 'X');
+    }
+
+    public static String safeDigitsPrefix(String value, int length) {
+        if (value == null) {
+            return "000";
+        }
+        String digits = value.replaceAll("\\D", "");
+        return digits.length() >= length
+                ? digits.substring(0, length)
+                : String.format("%0" + length + "d", Integer.parseInt(digits.isEmpty() ? "0" : digits));
+    }
+
+    public static String safeUpper(String value) {
+        return (value == null || value.isBlank())
+                ? "NA"
+                : value.toUpperCase();
+    }
+
 }
