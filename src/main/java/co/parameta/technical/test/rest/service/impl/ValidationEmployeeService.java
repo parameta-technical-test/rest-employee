@@ -1,6 +1,8 @@
 package co.parameta.technical.test.rest.service.impl;
 
+import co.parameta.technical.test.commons.dto.PositionDTO;
 import co.parameta.technical.test.commons.dto.ResponseGeneralDTO;
+import co.parameta.technical.test.commons.dto.TypeDocumentDTO;
 import co.parameta.technical.test.commons.pojo.EmployeeResponsePojo;
 import co.parameta.technical.test.commons.service.IJwtService;
 import co.parameta.technical.test.commons.util.helper.GeneralUtil;
@@ -101,6 +103,11 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
             }
         }
 
+        TypeDocumentDTO typeDocument = typeDocumentMapper.toDto(typeDocumentRepository.documentInformation(employeeRequest.getTypeDocument()));
+        PositionDTO position =  positionMapper.toDto(positionRepository.postionInformation(employeeRequest.getPosition()));
+
+        employeeRequest.setTypeDocument(typeDocument.getCode());
+        employeeRequest.setPosition(position.getCode());
         EmployeeResponsePojo employeeResponse =
                 (EmployeeResponsePojo) webServiceTemplate.marshalSendAndReceive(
                         jsonToPojoMapper.toSaveEmployeeRequest(
@@ -132,8 +139,8 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                     pojoToJsonMapper.toResponseEmployeeDto(
                             employeeResponse,
                             employeeRequest,
-                            typeDocumentMapper.toDto(typeDocumentRepository.documentInformation(employeeRequest.getTypeDocument())),
-                            positionMapper.toDto(positionRepository.postionInformation(employeeRequest.getPosition()))
+                            typeDocument,
+                            position
                     );
             response.setData(responseEmployee);
         }

@@ -130,19 +130,22 @@ public class EmployeeController {
     public ResponseEntity<ResponseGeneralDTO> allUserInformation(
             @Parameter(
                     description = "Employee document type (optional if idEmployee is provided)",
-                    example = "CC"
+                    example = "CC",
+                    required = false
             )
             @Param("typeDocument") String typeDocument,
 
             @Parameter(
                     description = "Employee document number (optional if idEmployee is provided)",
-                    example = "123456789"
+                    example = "123456789",
+                    required = false
             )
             @Param("numberDocument") String numberDocument,
 
             @Parameter(
                     description = "Employee unique identifier (optional if document data is provided)",
-                    example = "10"
+                    example = "10",
+                    required = false
             )
             @Param("idEmployee") Integer idEmployee
     ) {
