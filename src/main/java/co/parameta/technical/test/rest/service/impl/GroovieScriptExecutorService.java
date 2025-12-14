@@ -15,17 +15,54 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service implementation responsible for executing dynamic Groovy validation scripts.
+ * <p>
+ * This service allows business validation rules to be defined and executed dynamically
+ * at runtime using Groovy scripts stored externally (e.g. database).
+ * </p>
+ *
+ * <p>
+ * Features provided:
+ * <ul>
+ *     <li>Execution of multiple Groovy scripts in sequence</li>
+ *     <li>Shared execution context available to all scripts</li>
+ *     <li>Injection of extra variables into the Groovy binding</li>
+ *     <li>Controlled SQL execution through helper closures</li>
+ *     <li>Centralized error handling and logging</li>
+ * </ul>
+ * </p>
+ */
 @Service
 @Log4j2
 @RequiredArgsConstructor
 public class GroovieScriptExecutorService implements IGroovieScriptExecutorService {
 
+    /**
+     * JDBC template used to execute SQL queries from Groovy scripts.
+     */
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Executes a list of Groovy validation scripts sequentially.
+     * <p>
+     * Each script is executed using the same execution context and optional
+     * extra variables. If any script throws an exception, execution stops
+     * immediately and {@code null} is returned.
+     * </p>
+     *
+     * @param context           the main execution context object accessible as {@code context} inside scripts
+     * @param extras            additional variables exposed to the scripts (optional)
+     * @param scriptValidations list of Groovy validation scripts to execute
+     * @return a comma-separated string containing all script results,
+     *         or {@code null} if any script execution fails
+     */
     @Override
-    public String runScript(Object context,
-                            Map<String, Object> extras,
-                            List<ScriptValidationDTO> scriptValidations) {
+    public String runScript(
+            Object context,
+            Map<String, Object> extras,
+            List<ScriptValidationDTO> scriptValidations
+    ) {
 
         List<String> messages = new ArrayList<>();
 
@@ -59,9 +96,31 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
         return String.join(",", messages);
     }
 
-    private Object executeScript(String groovyScript,
-                                 Object context,
-                                 Map<String, Object> extras) {
+    /**
+     * Executes a single Groovy script using a prepared binding.
+     * <p>
+     * The following variables are available inside the script:
+     * <ul>
+     *     <li>{@code context} - main execution context</li>
+     *     <li>{@code jdbcTemplate} - Spring JDBC template</li>
+     *     <li>{@code log} - logger instance</li>
+     *     <li>{@code executeSql(sql, params...)} - executes a SQL query returning a list</li>
+     *     <li>{@code executeSingleSql(sql, params...)} - executes a SQL query returning a single row</li>
+     *     <li>Any variable provided in {@code extras}</li>
+     * </ul>
+     * </p>
+     *
+     * @param groovyScript the Groovy script code to execute
+     * @param context      the execution context object
+     * @param extras       additional variables injected into the script
+     * @return the result of the script execution
+     * @throws RuntimeException if script execution fails
+     */
+    private Object executeScript(
+            String groovyScript,
+            Object context,
+            Map<String, Object> extras
+    ) {
         try {
             Binding binding = new Binding();
             binding.setVariable("context", context);
@@ -118,6 +177,14 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
         }
     }
 
+    /**
+     * Executes a SQL query and returns a list of result rows.
+     *
+     * @param sql    the SQL query to execute
+     * @param params optional query parameters
+     * @return a list of result rows represented as maps
+     * @throws RuntimeException if SQL execution fails
+     */
     private List<Map<String, Object>> executeSql(String sql, Object... params) {
         try {
             log.info(Constants.LOG_EXECUTING_SQL, sql);
@@ -131,10 +198,19 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
         }
     }
 
+    /**
+     * Executes a SQL query and returns the first result row.
+     *
+     * @param sql    the SQL query to execute
+     * @param params optional query parameters
+     * @return the first result row, or {@code null} if no rows are returned
+     * @throws RuntimeException if SQL execution fails
+     */
     private Map<String, Object> executeSingleSql(String sql, Object... params) {
         try {
             log.info(Constants.LOG_EXECUTING_SINGLE_SQL, sql);
-            List<Map<String, Object>> results = jdbcTemplate.queryForList(sql, params);
+            List<Map<String, Object>> results =
+                    jdbcTemplate.queryForList(sql, params);
             return results.isEmpty() ? null : results.get(0);
         } catch (Exception e) {
             log.error(Constants.LOG_SQL_ERROR, sql, e);

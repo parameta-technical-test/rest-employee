@@ -15,7 +15,6 @@ import co.parameta.technical.test.rest.util.mapper.JsonToPojoMapper;
 import co.parameta.technical.test.rest.util.mapper.PojoToJsonMapper;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.transport.context.TransportContextHolder;
@@ -23,18 +22,21 @@ import org.springframework.ws.transport.http.HttpUrlConnection;
 
 import java.util.*;
 
-import static co.parameta.technical.test.rest.util.constant.Constants.EMPLOYEE_SAVED_SUCCESSFULLY;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
+/**
+ * Service responsible for validating, registering and processing employees.
+ * <p>
+ * This service executes Groovy-based validations, invokes the SOAP employee
+ * service, maps responses to REST DTOs and optionally triggers email delivery.
+ */
 @Service
 @RequiredArgsConstructor
 public class ValidationEmployeeService implements IValidationEmployeeService {
 
     private final IGroovieScriptExecutorService groovyScriptExecutorService;
-
     private final ScriptValidationRepository scriptValidationRepository;
-
     private final ScriptValidationMapper scriptValidationMapper;
     private final IJwtService jwtService;
     private final WebServiceTemplate webServiceTemplate;
@@ -42,9 +44,24 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
     private final PojoToJsonMapper pojoToJsonMapper;
     private final IPrepareMailDeliveryService iPrepareMailDeliveryService;
 
-
+    /**
+     * Validates and processes an employee request.
+     * <p>
+     * The flow includes:
+     * <ul>
+     *     <li>Groovy validation execution</li>
+     *     <li>SOAP service invocation</li>
+     *     <li>Response mapping to REST DTO</li>
+     *     <li>Optional email notification</li>
+     * </ul>
+     *
+     * @param employeeRequest employee data to validate and register
+     * @return a {@link ResponseGeneralDTO} with the process result
+     * @throws MessagingException if email delivery fails
+     */
     @Override
-    public ResponseGeneralDTO validationEmployee(EmployeeRequestDTO employeeRequest) throws MessagingException {
+    public ResponseGeneralDTO validationEmployee(EmployeeRequestDTO employeeRequest)
+            throws MessagingException {
 
         ResponseGeneralDTO response = new ResponseGeneralDTO();
         response.setStatus(HTTP_OK);
@@ -85,7 +102,6 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                         message -> {
                             var transportContext = TransportContextHolder.getTransportContext();
                             var connection = (HttpUrlConnection) transportContext.getConnection();
-
                             connection.addRequestHeader(
                                     "Authorization",
                                     "Bearer " + jwtService.getTokenFromHeader()
@@ -93,9 +109,16 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
                         }
                 );
 
-        int status = GeneralUtil.mapToValueObject(GeneralUtil.get(() -> employeeResponse.getResponse().getStatus(), null), Integer.class, null);
+        int status = GeneralUtil.mapToValueObject(
+                GeneralUtil.get(
+                        () -> employeeResponse.getResponse().getStatus(),
+                        null
+                ),
+                Integer.class,
+                null
+        );
 
-        if(status != 500){
+        if (status != HTTP_INTERNAL_ERROR) {
             ResponseEmployeeDTO responseEmployee =
                     pojoToJsonMapper.toResponseEmployeeDto(
                             employeeResponse,
@@ -104,17 +127,18 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
             response.setData(responseEmployee);
         }
 
-
-        if(!GeneralRestUtil.isNullOrBlank(employeeRequest.getEmail())){
+        if (!GeneralRestUtil.isNullOrBlank(employeeRequest.getEmail())) {
             iPrepareMailDeliveryService.prepareMailDelivery(employeeRequest);
         }
 
         response.setStatus(status);
-        response.setMessage(GeneralUtil.get(() -> employeeResponse.getResponse().getMessage(), null));
+        response.setMessage(
+                GeneralUtil.get(
+                        () -> employeeResponse.getResponse().getMessage(),
+                        null
+                )
+        );
 
         return response;
     }
-
-
-
 }

@@ -1,6 +1,7 @@
 package co.parameta.technical.test.rest;
 
 import co.parameta.technical.test.commons.configuration.ApplicationConfig;
+import co.parameta.technical.test.commons.configuration.AwsS3Config;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
@@ -11,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan(
 		basePackages = "co.parameta.technical.test"
 )
-@Import({ApplicationConfig.class})
+@Import({ApplicationConfig.class, AwsS3Config.class})
 @EnableAsync
 public class RestApplication {
 

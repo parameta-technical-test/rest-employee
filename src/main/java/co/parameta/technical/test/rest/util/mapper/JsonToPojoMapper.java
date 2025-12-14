@@ -6,9 +6,26 @@ import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
 import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
 import org.mapstruct.Mapper;
 
+/**
+ * Mapper responsible for transforming REST JSON DTOs into SOAP POJOs.
+ * <p>
+ * This mapper builds the SOAP request structure expected by the employee SOAP service,
+ * including nested objects such as {@link TypeDocumentPojo}, {@link PositionPojo} and
+ * {@link AdministratorUserPojo}.
+ */
 @Mapper(componentModel = "spring")
 public interface JsonToPojoMapper {
 
+    /**
+     * Creates a {@link SaveEmployeeRequestPojo} used to invoke the SOAP service.
+     * <p>
+     * Dates are converted to {@link javax.xml.datatype.XMLGregorianCalendar} using
+     * {@link GeneralRestUtil#fromString(String)} to support multiple formats.
+     *
+     * @param employeeRequest        REST request with employee data
+     * @param administratorUserCode  administrator user code to include in the SOAP request
+     * @return a populated {@link SaveEmployeeRequestPojo}, or {@code null} if input is null
+     */
     default SaveEmployeeRequestPojo toSaveEmployeeRequest(
             EmployeeRequestDTO employeeRequest,
             String administratorUserCode
@@ -72,4 +89,3 @@ public interface JsonToPojoMapper {
         return request;
     }
 }
-

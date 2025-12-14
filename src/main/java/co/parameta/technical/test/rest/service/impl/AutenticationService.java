@@ -35,23 +35,61 @@ import javax.crypto.SecretKey;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service implementation responsible for user authentication and authorization logic.
+ * <p>
+ * This service handles:
+ * <ul>
+ *     <li>User authentication using Spring Security</li>
+ *     <li>JWT token generation and validation</li>
+ *     <li>Token revocation validation using a blacklist</li>
+ *     <li>Retrieval of authenticated user information</li>
+ * </ul>
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2
 public class AutenticationService implements IAutenticationService {
 
+    /**
+     * JWT service used to generate and validate tokens.
+     */
     private final IJwtService iJwtService;
+
+    /**
+     * Spring Security authentication manager.
+     */
     private final AuthenticationManager authenticationManager;
-    private final ITokenBlacklistService iTokenBlacklistService;
+
+    /**
+     * Repository used to validate revoked tokens.
+     */
     private final BlacklistTokenRepository blacklistTokenRepository;
 
+    /**
+     * Repository used to retrieve administrator user information.
+     */
     private final AdministratorUserRepository administratorUserRepository;
 
+    /**
+     * Mapper used to convert administrator entities to DTOs.
+     */
     private final AdministratorUserMapper administratorUserMapper;
 
+    /**
+     * Secret key used to validate JWT signatures.
+     */
     @Value("${jwt.secret}")
     private String secretKey;
 
+    /**
+     * Authenticates a user and generates a JWT token.
+     *
+     * @param request the login request containing email and password
+     * @return a {@link ResponseGeneralDTO} containing authentication result and token data
+     * @throws BadCredentialsException if authentication fails
+     */
     @Override
     public ResponseGeneralDTO userLogin(RequestLoginDTO request) {
         ResponseGeneralDTO response = new ResponseGeneralDTO();
@@ -74,6 +112,17 @@ public class AutenticationService implements IAutenticationService {
         return response;
     }
 
+    /**
+     * Retrieves authenticated user information based on a JWT authorization header.
+     * <p>
+     * The token is validated against expiration, format, signature,
+     * and blacklist status.
+     * </p>
+     *
+     * @param tokenHeader the HTTP Authorization header containing the JWT
+     * @return a {@link ResponseGeneralDTO} with user information
+     * @throws MensajePersonalizadoException if the token is missing, invalid, revoked, or expired
+     */
     @Override
     public ResponseGeneralDTO userInformation(String tokenHeader) {
 
@@ -96,12 +145,15 @@ public class AutenticationService implements IAutenticationService {
 
             final String userCode = iJwtService.getCodeFromToken(jwt);
 
-            Optional<AdministratorUserEntity> optUser = administratorUserRepository.findByCode(userCode);
+            Optional<AdministratorUserEntity> optUser =
+                    administratorUserRepository.findByCode(userCode);
+
             if (optUser.isEmpty()) {
                 throw new MensajePersonalizadoException(Constants.ERR_USER_NOT_FOUND);
             }
 
-            final AdministratorUserDTO user = administratorUserMapper.toDto(optUser.get());
+            final AdministratorUserDTO user =
+                    administratorUserMapper.toDto(optUser.get());
 
             ResponseGeneralDTO response = new ResponseGeneralDTO();
             response.setStatus(HttpStatus.OK.value());
@@ -123,6 +175,12 @@ public class AutenticationService implements IAutenticationService {
         }
     }
 
+    /**
+     * Authenticates the user credentials using Spring Security.
+     *
+     * @param requestLoginDTO login request containing email and password
+     * @throws BadCredentialsException if authentication fails
+     */
     private void authenticateUser(RequestLoginDTO requestLoginDTO) {
         try {
             authenticationManager.authenticate(
@@ -136,6 +194,13 @@ public class AutenticationService implements IAutenticationService {
         }
     }
 
+    /**
+     * Retrieves administrator user information by email.
+     *
+     * @param email the user email
+     * @return the administrator user DTO
+     * @throws IllegalStateException if the user is not found
+     */
     private AdministratorUserDTO getUser(String email) {
         AdministratorUserDTO userDto = administratorUserMapper.toDto(
                 administratorUserRepository.findByEmail(email).orElse(null)
@@ -146,11 +211,25 @@ public class AutenticationService implements IAutenticationService {
         return userDto;
     }
 
+    /**
+     * Generates a JWT token for the given administrator user.
+     *
+     * @param administratorUser the authenticated administrator user
+     * @return the generated JWT token
+     */
     private String generateToken(AdministratorUserDTO administratorUser) {
-        UserDetails user = new AdministratorUserSecurityDTO(administratorUser, List.of());
+        UserDetails user =
+                new AdministratorUserSecurityDTO(administratorUser, List.of());
         return iJwtService.getToken(user);
     }
 
+    /**
+     * Extracts the JWT token from the Authorization header.
+     *
+     * @param header the Authorization header value
+     * @return the extracted JWT token
+     * @throws MensajePersonalizadoException if the header format is invalid
+     */
     private String extractBearerToken(String header) {
         String value = header.trim();
         if (value.regionMatches(true, 0,

@@ -18,6 +18,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST controller responsible for authentication and session management.
+ * <p>
+ * This controller provides endpoints to authenticate users, retrieve
+ * authenticated user information, and invalidate JWT tokens (logout).
+ * </p>
+ *
+ * <p>
+ * JWT Bearer authentication is used to secure protected endpoints.
+ * </p>
+ */
 @RestController
 @RequestMapping("/login")
 @RequiredArgsConstructor
@@ -27,9 +38,20 @@ import org.springframework.web.bind.annotation.*;
 )
 public class LoginController {
 
-    private final ITokenBlacklistService iTokenBlacklistService;
-    private final IAutenticationService iAutenticationService;
+    private final ITokenBlacklistService tokenBlacklistService;
+    private final IAutenticationService authenticationService;
 
+    /**
+     * Authenticates a user and generates a JWT token.
+     * <p>
+     * The credentials provided in the request body are validated and,
+     * if successful, a JWT token is returned in the response.
+     * </p>
+     *
+     * @param request login credentials (email and password)
+     * @return response containing authentication result and JWT token
+     * @throws Exception if an unexpected authentication error occurs
+     */
     @Operation(
             summary = "Authenticate user",
             description = "Authenticates a user and returns a JWT token"
@@ -51,17 +73,28 @@ public class LoginController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = RequestLoginDTO.class))
             )
-            @RequestBody @Valid  RequestLoginDTO request
+            @RequestBody @Valid RequestLoginDTO request
     ) throws Exception {
 
-        ResponseGeneralDTO respuestaGeneralDTO =
-                iAutenticationService.userLogin(request);
+        ResponseGeneralDTO response =
+                authenticationService.userLogin(request);
 
         return ResponseEntity
-                .status(respuestaGeneralDTO.getStatus())
-                .body(respuestaGeneralDTO);
+                .status(response.getStatus())
+                .body(response);
     }
 
+    /**
+     * Retrieves information of the authenticated user.
+     * <p>
+     * The user is identified using the JWT token provided in the
+     * {@code Authorization} header.
+     * </p>
+     *
+     * @param authorizationHeader JWT Authorization header (Bearer token)
+     * @return response containing authenticated user information
+     * @throws Exception if the token is invalid or an error occurs
+     */
     @Operation(
             summary = "Get user information",
             description = "Returns authenticated user information based on JWT token"
@@ -89,14 +122,23 @@ public class LoginController {
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) throws Exception {
 
-        ResponseGeneralDTO respuestaGeneralDTO =
-                iAutenticationService.userInformation(authorizationHeader);
+        ResponseGeneralDTO response =
+                authenticationService.userInformation(authorizationHeader);
 
         return ResponseEntity
-                .status(respuestaGeneralDTO.getStatus())
-                .body(respuestaGeneralDTO);
+                .status(response.getStatus())
+                .body(response);
     }
 
+    /**
+     * Logs out the authenticated user by invalidating the JWT token.
+     * <p>
+     * The token is added to a blacklist so it cannot be used again.
+     * </p>
+     *
+     * @param authorizationHeader JWT Authorization header to revoke
+     * @return response indicating the logout result
+     */
     @Operation(
             summary = "Logout user",
             description = "Invalidates the current JWT token"
@@ -124,7 +166,7 @@ public class LoginController {
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) {
         return ResponseEntity.ok(
-                iTokenBlacklistService.revokeToken(authorizationHeader)
+                tokenBlacklistService.revokeToken(authorizationHeader)
         );
     }
 }
