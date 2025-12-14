@@ -141,7 +141,10 @@ public class AutenticationService implements IAutenticationService {
 
         try {
             SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secretKey));
-            Jwts.parser().setSigningKey(key).build().parseClaimsJws(jwt);
+            Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(jwt);
 
             final String userCode = iJwtService.getCodeFromToken(jwt);
 

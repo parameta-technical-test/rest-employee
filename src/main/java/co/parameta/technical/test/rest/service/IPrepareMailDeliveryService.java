@@ -28,6 +28,6 @@ public interface IPrepareMailDeliveryService {
      *                        the email content and attachments
      * @throws MessagingException if an error occurs during email preparation or delivery
      */
-    void prepareMailDelivery(EmployeeRequestDTO employeeRequest) throws MessagingException;
+    void prepareMailDelivery(EmployeeRequestDTO employeeRequest, boolean isUpdate) throws MessagingException;
 
 }

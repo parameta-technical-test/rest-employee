@@ -8,11 +8,15 @@ import co.parameta.technical.test.commons.util.mapper.ScriptValidationMapper;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
 import co.parameta.technical.test.rest.dto.ResponseEmployeeDTO;
 import co.parameta.technical.test.rest.dto.ResponseValidationGroovieDTO;
+import co.parameta.technical.test.rest.repository.PositionRepository;
 import co.parameta.technical.test.rest.repository.ScriptValidationRepository;
+import co.parameta.technical.test.rest.repository.TypeDocumentRepository;
 import co.parameta.technical.test.rest.service.*;
 import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
 import co.parameta.technical.test.rest.util.mapper.JsonToPojoMapper;
 import co.parameta.technical.test.rest.util.mapper.PojoToJsonMapper;
+import co.parameta.technical.test.rest.util.mapper.PositionMapper;
+import co.parameta.technical.test.rest.util.mapper.TypeDocumentMapper;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +47,10 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
     private final JsonToPojoMapper jsonToPojoMapper;
     private final PojoToJsonMapper pojoToJsonMapper;
     private final IPrepareMailDeliveryService iPrepareMailDeliveryService;
+    private final TypeDocumentRepository typeDocumentRepository;
+    private final TypeDocumentMapper typeDocumentMapper;
+    private final PositionRepository positionRepository;
+    private final PositionMapper positionMapper;
 
     /**
      * Validates and processes an employee request.
@@ -119,16 +127,19 @@ public class ValidationEmployeeService implements IValidationEmployeeService {
         );
 
         if (status != HTTP_INTERNAL_ERROR) {
+
             ResponseEmployeeDTO responseEmployee =
                     pojoToJsonMapper.toResponseEmployeeDto(
                             employeeResponse,
-                            employeeRequest
+                            employeeRequest,
+                            typeDocumentMapper.toDto(typeDocumentRepository.documentInformation(employeeRequest.getTypeDocument())),
+                            positionMapper.toDto(positionRepository.postionInformation(employeeRequest.getPosition()))
                     );
             response.setData(responseEmployee);
         }
 
         if (!GeneralRestUtil.isNullOrBlank(employeeRequest.getEmail())) {
-            iPrepareMailDeliveryService.prepareMailDelivery(employeeRequest);
+            iPrepareMailDeliveryService.prepareMailDelivery(employeeRequest, status == 200);
         }
 
         response.setStatus(status);

@@ -1,6 +1,7 @@
 package co.parameta.technical.test.rest.service.impl;
 
 import co.parameta.technical.test.commons.dto.ScriptValidationDTO;
+import co.parameta.technical.test.commons.util.exception.MensajePersonalizadoException;
 import co.parameta.technical.test.rest.service.IGroovieScriptExecutorService;
 import co.parameta.technical.test.rest.util.constant.Constants;
 import groovy.lang.Binding;
@@ -170,7 +171,7 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
 
         } catch (Exception e) {
             log.error(Constants.LOG_SCRIPT_ERROR, e.getMessage(), e);
-            throw new RuntimeException(
+            throw new MensajePersonalizadoException(
                     Constants.EXCEPTION_SCRIPT_EXECUTION + e.getMessage(),
                     e
             );
@@ -191,7 +192,7 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
             return jdbcTemplate.queryForList(sql, params);
         } catch (Exception e) {
             log.error(Constants.LOG_SQL_ERROR, sql, e);
-            throw new RuntimeException(
+            throw new MensajePersonalizadoException(
                     Constants.EXCEPTION_SQL_EXECUTION + e.getMessage(),
                     e
             );
@@ -214,7 +215,7 @@ public class GroovieScriptExecutorService implements IGroovieScriptExecutorServi
             return results.isEmpty() ? null : results.get(0);
         } catch (Exception e) {
             log.error(Constants.LOG_SQL_ERROR, sql, e);
-            throw new RuntimeException(
+            throw new MensajePersonalizadoException(
                     Constants.EXCEPTION_SQL_EXECUTION + e.getMessage(),
                     e
             );

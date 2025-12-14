@@ -21,9 +21,8 @@ public interface IAutenticationService {
      *
      * @param request the login request containing user credentials
      * @return a {@link ResponseGeneralDTO} containing authentication result and token data
-     * @throws Exception if authentication fails or an unexpected error occurs
      */
-    ResponseGeneralDTO userLogin(RequestLoginDTO request) throws Exception;
+    ResponseGeneralDTO userLogin(RequestLoginDTO request);
 
     /**
      * Retrieves authenticated user information based on the JWT authorization header.

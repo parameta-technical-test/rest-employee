@@ -16,7 +16,7 @@ import java.util.List;
  * (e.g. email configuration, feature toggles, PDF generation flags).
  * </p>
  */
-@Repository("rest-system")
+@Repository("restSystem")
 public interface SystemParameterRepository extends JpaRepository<SystemParameterEntity, Integer> {
 
     /**

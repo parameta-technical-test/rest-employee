@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 
 /**
  * Data Transfer Object that represents the employee request payload.
@@ -112,5 +111,5 @@ public class EmployeeRequestDTO {
             description = "Employee salary",
             example = "3500000.00"
     )
-    private BigDecimal salary;
+    private String salary;
 }

@@ -9,6 +9,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
+import groovy.util.logging.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
  * The footer displays the current page number aligned to the right
  * at the bottom of the document.
  */
+@lombok.extern.slf4j.Slf4j
 @Service
+@Slf4j
 public class SimpleFooterService extends PdfPageEventHelper {
 
     /**
@@ -47,7 +50,7 @@ public class SimpleFooterService extends PdfPageEventHelper {
                     writer.getDirectContent()
             );
         } catch (Exception ignored) {
-            // Footer rendering should not interrupt PDF generation
+            log.info("Error ignored");
         }
     }
 }

@@ -120,7 +120,7 @@ public class LoginController {
                     example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             )
             @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader
-    ) throws Exception {
+    ) {
 
         ResponseGeneralDTO response =
                 authenticationService.userInformation(authorizationHeader);

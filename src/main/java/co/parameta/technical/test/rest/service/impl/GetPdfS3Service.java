@@ -1,5 +1,6 @@
 package co.parameta.technical.test.rest.service.impl;
 
+import co.parameta.technical.test.commons.util.exception.MensajePersonalizadoException;
 import co.parameta.technical.test.rest.service.IGetPdfS3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +59,7 @@ public class GetPdfS3Service implements IGetPdfS3Service {
             return s3Object.readAllBytes();
 
         } catch (IOException e) {
-            throw new RuntimeException("Error reading PDF from S3", e);
+            throw new MensajePersonalizadoException("Error reading PDF from S3", e);
         }
     }
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
  * users by unique identifiers such as email and code.
  * </p>
  */
-@Repository("rest-administrator")
+@Repository("restAdministrator")
 public interface AdministratorUserRepository extends JpaRepository<AdministratorUserEntity, String> {
 
     /**

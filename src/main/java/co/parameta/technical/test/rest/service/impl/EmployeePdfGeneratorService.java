@@ -1,6 +1,9 @@
 package co.parameta.technical.test.rest.service.impl;
 
+import co.parameta.technical.test.commons.util.exception.MensajePersonalizadoException;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
+import co.parameta.technical.test.rest.repository.PositionRepository;
+import co.parameta.technical.test.rest.repository.TypeDocumentRepository;
 import co.parameta.technical.test.rest.service.IEmployeePdfGeneratorService;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.PdfPCell;
@@ -22,19 +25,12 @@ import java.util.Locale;
 /**
  * Service implementation responsible for generating employee PDF reports.
  * <p>
- * This service creates a well-formatted PDF document containing a summary
- * of the employee information provided during the registration or validation
- * process.
- * </p>
- *
- * <p>
- * The generated PDF includes:
+ * Supports two report modes:
  * <ul>
- *     <li>A header with generation date</li>
- *     <li>Employee identification data</li>
- *     <li>Employment details such as position and salary</li>
- *     <li>Informational notes</li>
+ *   <li><b>Creation report</b>: when an employee is registered/created.</li>
+ *   <li><b>Update report</b>: when an employee record is updated.</li>
  * </ul>
+ * The report mode is controlled by a boolean flag {@code isUpdate}.
  * </p>
  */
 @Service
@@ -42,20 +38,42 @@ import java.util.Locale;
 public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService {
 
     /**
-     * Generates a PDF report containing the employee information.
-     *
+     * Repository used to manage and retrieve employee position data.
      * <p>
-     * The PDF is generated in-memory and returned as a byte array,
-     * suitable for storage (e.g. S3) or email attachment.
+     * This repository provides access to position-related persistence operations,
+     * such as finding position information by code or retrieving available
+     * positions from the data source.
+     * </p>
+     */
+    private final PositionRepository positionRepository;
+
+    /**
+     * Repository used to manage and retrieve document type data.
+     * <p>
+     * This repository provides access to document type persistence operations,
+     * allowing validation and lookup of identification document types
+     * associated with employees.
+     * </p>
+     */
+    private final TypeDocumentRepository typeDocumentRepository;
+
+
+
+    /**
+     * Generates a PDF report containing employee information.
+     * <p>
+     * If {@code isUpdate} is {@code true}, the PDF is generated as an <b>update report</b>.
+     * Otherwise, it is generated as a <b>creation report</b>.
      * </p>
      *
-     * @param employee the employee information used to populate the report
+     * @param employee employee information used to populate the report
+     * @param isUpdate {@code true} for an update report, {@code false} for a creation report
      * @return a byte array representing the generated PDF document
-     * @throws IllegalArgumentException if the employee object is {@code null}
+     * @throws IllegalArgumentException if {@code employee} is {@code null}
      * @throws RuntimeException if an error occurs during PDF generation
      */
     @Override
-    public byte[] generateEmployeeReport(EmployeeRequestDTO employee) {
+    public byte[] generateEmployeeReport(EmployeeRequestDTO employee, boolean isUpdate) {
         if (employee == null) {
             throw new IllegalArgumentException("EmployeeRequestDTO cannot be null");
         }
@@ -67,35 +85,43 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
 
             document.open();
 
-            addHeader(document);
+            addHeader(document, isUpdate);
+            addOperationMeta(document, isUpdate);
             addSubHeader(document, employee);
             addEmployeeTable(document, employee);
 
             document.add(Chunk.NEWLINE);
-            addNotes(document);
+            addOperationSummary(document, isUpdate);
+
+            document.add(Chunk.NEWLINE);
+            addNotes(document, isUpdate);
 
             document.close();
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error generating employee PDF", e);
+            throw new MensajePersonalizadoException("Error generating employee PDF", e);
         }
     }
 
+
+
     /**
-     * Adds the main header section to the PDF document.
-     * <p>
-     * Includes the document title and the generation timestamp.
-     * </p>
+     * Adds the header section depending on the report type.
      *
-     * @param document the PDF document being generated
-     * @throws DocumentException if an error occurs while writing to the document
+     * @param document PDF document
+     * @param isUpdate flag indicating update mode
+     * @throws DocumentException if writing fails
      */
-    private static void addHeader(Document document) throws DocumentException {
+    private void addHeader(Document document, boolean isUpdate) throws DocumentException {
         Font titleFont = new Font(Font.HELVETICA, 16, Font.BOLD);
         Font subtitleFont = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(90, 90, 90));
 
-        Paragraph title = new Paragraph("Employee Registration Summary", titleFont);
+        String titleText = isUpdate
+                ? "Updated Employee Information Summary"
+                : "Employee Registration Summary";
+
+        Paragraph title = new Paragraph(titleText, titleFont);
         title.setSpacingAfter(4f);
         document.add(title);
 
@@ -115,13 +141,40 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
     }
 
     /**
+     * Adds basic metadata describing the operation (create/update).
+     *
+     * @param document PDF document
+     * @param isUpdate flag indicating update mode
+     * @throws DocumentException if writing fails
+     */
+    private void addOperationMeta(Document document, boolean isUpdate) throws DocumentException {
+        Font strong = new Font(Font.HELVETICA, 10, Font.BOLD);
+        Font normal = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(55, 65, 81));
+
+        String op = isUpdate ? "Employee data update" : "Employee registration";
+        String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        Paragraph meta = new Paragraph();
+        meta.setSpacingAfter(10f);
+
+        meta.add(new Chunk("Operation: ", strong));
+        meta.add(new Chunk(op, normal));
+        meta.add(Chunk.NEWLINE);
+
+        meta.add(new Chunk(isUpdate ? "Updated on: " : "Registered on: ", strong));
+        meta.add(new Chunk(ts, normal));
+
+        document.add(meta);
+    }
+
+    /**
      * Adds a sub-header section containing the employee full name.
      *
-     * @param document the PDF document being generated
-     * @param employee the employee information
-     * @throws DocumentException if an error occurs while writing to the document
+     * @param document PDF document
+     * @param employee employee data
+     * @throws DocumentException if writing fails
      */
-    private static void addSubHeader(Document document, EmployeeRequestDTO employee)
+    private void addSubHeader(Document document, EmployeeRequestDTO employee)
             throws DocumentException {
 
         Font strong = new Font(Font.HELVETICA, 11, Font.BOLD);
@@ -129,52 +182,76 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
 
         Paragraph p = new Paragraph();
         p.add(new Chunk("Employee: ", strong));
-        p.add(new Chunk(
-                safe(employee.getNames()) + " " + safe(employee.getLastNames()),
-                normal
-        ));
+        p.add(new Chunk(safe(employee.getNames()) + " " + safe(employee.getLastNames()), normal));
         p.setSpacingAfter(12f);
 
         document.add(p);
     }
 
     /**
-     * Adds a table with the employee detailed information.
+     * Adds the employee information table (latest values).
      *
-     * <p>
-     * The table contains labels and values such as document type,
-     * document number, dates, position, email, and salary.
-     * </p>
-     *
-     * @param document the PDF document being generated
-     * @param employee the employee information
-     * @throws DocumentException if an error occurs while writing to the document
+     * @param document PDF document
+     * @param employee employee data
+     * @throws DocumentException if writing fails
      */
-    private static void addEmployeeTable(Document document, EmployeeRequestDTO employee)
+    private void addEmployeeTable(Document document, EmployeeRequestDTO employee)
             throws DocumentException {
+
         PdfPTable table = new PdfPTable(new float[]{1.2f, 2.8f});
         table.setWidthPercentage(100);
         table.setSpacingBefore(6f);
         table.setSpacingAfter(8f);
 
-        addRow(table, "Type of Document", safe(employee.getTypeDocument()));
+        addRow(table, "Type of Document", typeDocumentRepository.documentDescription(safe(employee.getTypeDocument())));
         addRow(table, "Document Number", safe(employee.getDocumentNumber()));
         addRow(table, "Date of Birth", safe(employee.getDateOfBirth()));
         addRow(table, "Company Affiliation Date", safe(employee.getDateAffiliationCompany()));
-        addRow(table, "Position", safe(employee.getPosition()));
+        addRow(table, "Position", positionRepository.positionDescription(safe(employee.getPosition())));
         addRow(table, "Email", safe(employee.getEmail()));
-        addRow(table, "Salary", formatMoney(employee.getSalary()));
+        addRow(table, "Salary", formatMoney(Double.parseDouble(employee.getSalary())));
 
         document.add(table);
     }
 
+
+
+
     /**
-     * Adds an informational notes section to the PDF document.
+     * Adds a small summary section depending on the operation type.
      *
-     * @param document the PDF document being generated
-     * @throws DocumentException if an error occurs while writing to the document
+     * @param document PDF document
+     * @param isUpdate update mode flag
+     * @throws DocumentException if writing fails
      */
-    private static void addNotes(Document document) throws DocumentException {
+    private static void addOperationSummary(Document document, boolean isUpdate) throws DocumentException {
+        Font sectionTitle = new Font(Font.HELVETICA, 11, Font.BOLD);
+        Font text = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(70, 70, 70));
+
+        String title = isUpdate ? "Update Summary" : "Registration Summary";
+        String body = isUpdate
+                ? "This report reflects the most recent employee information after an update operation. " +
+                "Only the latest values are displayed in the summary table above."
+                : "This report confirms the employee registration in the system. " +
+                "The information shown in the summary table above corresponds to the registered values.";
+
+        Paragraph t = new Paragraph(title, sectionTitle);
+        t.setSpacingAfter(6f);
+        document.add(t);
+
+        Paragraph c = new Paragraph(body, text);
+        c.setLeading(14f);
+        document.add(c);
+    }
+
+    /**
+     * Adds notes depending on whether the report is for create or update.
+     *
+     * @param document PDF document
+     * @param isUpdate update mode flag
+     * @throws DocumentException if writing fails
+     */
+    private static void addNotes(Document document, boolean isUpdate) throws DocumentException {
         Font noteTitle = new Font(Font.HELVETICA, 11, Font.BOLD);
         Font noteText = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(70, 70, 70));
 
@@ -182,11 +259,13 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
         title.setSpacingAfter(6f);
         document.add(title);
 
-        Paragraph content = new Paragraph(
-                "This document is a summary of the employee information registered in the system. " +
-                        "If you find any inconsistency, please contact the administrator or the HR team.",
-                noteText
-        );
+        String msg = isUpdate
+                ? "This document confirms that the employee record was updated in the system. " +
+                "If you identify any inconsistency, please contact the system administrator or the Human Resources team."
+                : "This document is a summary of the employee information registered in the system. " +
+                "If you identify any inconsistency, please contact the system administrator or the Human Resources team.";
+
+        Paragraph content = new Paragraph(msg, noteText);
         content.setLeading(14f);
         document.add(content);
     }
@@ -194,9 +273,9 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
     /**
      * Adds a single row to the employee information table.
      *
-     * @param table the table to which the row is added
-     * @param label the label displayed in the first column
-     * @param value the value displayed in the second column
+     * @param table table reference
+     * @param label label (left column)
+     * @param value value (right column)
      */
     private static void addRow(PdfPTable table, String label, String value) {
         Font labelFont = new Font(Font.HELVETICA, 10, Font.BOLD, new Color(30, 30, 30));
@@ -218,23 +297,36 @@ public class EmployeePdfGeneratorService implements IEmployeePdfGeneratorService
     /**
      * Safely formats a string value for display.
      *
-     * @param value the original string value
-     * @return the trimmed value, or {@code "N/A"} if the value is null or blank
+     * @param value raw value
+     * @return trimmed value or "N/A"
      */
     private static String safe(String value) {
         return (value == null || value.trim().isEmpty()) ? "N/A" : value.trim();
     }
 
     /**
-     * Formats a monetary value using Colombian locale.
+     * Formats money in Colombian locale.
      *
-     * @param salary the salary value
-     * @return the formatted salary, or {@code "N/A"} if the value is null
+     * @param salary salary amount
+     * @return formatted salary or "N/A"
      */
     private static String formatMoney(BigDecimal salary) {
         if (salary == null) return "N/A";
         NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
         return nf.format(salary);
     }
-}
 
+    /**
+     * Formats money in Colombian locale.
+     *
+     * @param salary salary amount
+     * @return formatted salary or "N/A"
+     */
+    private static String formatMoney(Double salary) {
+        if (salary == null) {
+            return "N/A";
+        }
+        return formatMoney(BigDecimal.valueOf(salary));
+    }
+
+}

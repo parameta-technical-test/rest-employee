@@ -1,10 +1,13 @@
 package co.parameta.technical.test.rest.util.mapper;
 
+import co.parameta.technical.test.commons.dto.PositionDTO;
+import co.parameta.technical.test.commons.dto.TypeDocumentDTO;
 import co.parameta.technical.test.commons.pojo.*;
 import co.parameta.technical.test.commons.util.helper.GeneralUtil;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
 import co.parameta.technical.test.rest.dto.ExtraInformationDTO;
 import co.parameta.technical.test.rest.dto.ResponseEmployeeDTO;
+import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
 import org.mapstruct.Mapper;
 
 /**
@@ -30,7 +33,9 @@ public interface PojoToJsonMapper {
      */
     default ResponseEmployeeDTO toResponseEmployeeDto(
             EmployeeResponsePojo employeeResponse,
-            EmployeeRequestDTO employee
+            EmployeeRequestDTO employee,
+            TypeDocumentDTO typeDocument,
+            PositionDTO position
     ) {
 
         if (employeeResponse == null || employee == null) {
@@ -51,8 +56,7 @@ public interface PojoToJsonMapper {
         responseEmployee.setLastNames(
                 GeneralUtil.get(employee::getLastNames, null)
         );
-        responseEmployee.setTypeDocument(
-                GeneralUtil.get(employee::getTypeDocument, null)
+        responseEmployee.setTypeDocument(typeDocument
         );
 
         responseEmployee.setDocumentNumber(
@@ -60,19 +64,18 @@ public interface PojoToJsonMapper {
         );
 
         responseEmployee.setDateOfBirth(
-                GeneralUtil.get(employee::getDateOfBirth, null)
+                GeneralRestUtil.parseToDate(GeneralUtil.get(employee::getDateOfBirth, null))
         );
 
         responseEmployee.setDateAffiliationCompany(
-                GeneralUtil.get(employee::getDateAffiliationCompany, null)
+                GeneralRestUtil.parseToDate(GeneralUtil.get(employee::getDateAffiliationCompany, null))
         );
 
-        responseEmployee.setPosition(
-                GeneralUtil.get(employee::getPosition, null)
+        responseEmployee.setPosition(position
         );
 
         responseEmployee.setSalary(
-                GeneralUtil.get(employee::getSalary, null)
+                GeneralUtil.mapToValueObject(GeneralUtil.get(employee::getSalary, null), Double.class, null)
         );
 
         responseEmployee.setTimeLinkedToCompany(

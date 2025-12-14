@@ -163,4 +163,8 @@ public final class Constants {
 
     /** Label used for day values. */
     public static final String DAYS = "days";
+
+    /** Message about error ignored */
+    public static final String ERROR_IGNORE = "Error ignored";
+
 }

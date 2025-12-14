@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * by different search criteria, as well as to update report storage information.
  * </p>
  */
-@Repository("rest-employee")
+@Repository("restEmployee")
 public interface EmployeeRepository extends JpaRepository<EmployeeEntity, Integer> {
 
     /**

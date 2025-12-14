@@ -39,19 +39,19 @@ public class ViewAllUserInformationService implements IViewAllUserInformationSer
      * to the response data. If no search criteria is provided, the response data is null.
      *
      * @param idEmployee     employee id (optional)
-     * @param typeDocumnet   document type (optional, requires numberDocument)
-     * @param numberDocument document number (optional, requires typeDocumnet)
+     * @param numberDocument   document type (optional, requires numberDocument)
+     * @param typeDocument document number (optional, requires typeDocument)
      * @return a {@link ResponseGeneralDTO} containing the employee data when found
      */
     @Override
     public ResponseGeneralDTO allInformationEmployee(
             Integer idEmployee,
-            String typeDocumnet,
+            String typeDocument,
             String numberDocument
     ) {
 
         boolean hasId = idEmployee != null;
-        boolean hasDocumentData = typeDocumnet != null && numberDocument != null;
+        boolean hasDocumentData = typeDocument != null && numberDocument != null;
         boolean viewPdf = "1".equals(systemParameterRepository.findByName("GET_PDF_EMPLOYEE").getContent());
 
         AllInformationEmployeeDTO allInformation = null;
@@ -61,19 +61,22 @@ public class ViewAllUserInformationService implements IViewAllUserInformationSer
 
         if (hasId || hasDocumentData) {
             EmployeeDTO employeeInformation = employeeMapper.toDto(
-                    employeeRepository.searchAllInformationEmployee(idEmployee, typeDocumnet, numberDocument)
+                    employeeRepository.searchAllInformationEmployee(idEmployee, numberDocument, typeDocument)
             );
 
-            allInformation = employeeMapper.employeeDTOToAllInformationEmployeeDTO(
-                    employeeInformation,
-                    GeneralRestUtil.toExtraInformation(
-                            GeneralUtil.diff(employeeInformation.getDateAffiliationCompany(), new Date())
-                    ),
-                    GeneralRestUtil.toExtraInformation(
-                            GeneralUtil.diff(employeeInformation.getDateOfBirth(), new Date())
-                    ),
-                    viewPdf ? iGetPdfS3Service.getPdf(employeeInformation.getStorageLocationReport()) : null
-            );
+            if(employeeInformation != null){
+                allInformation = employeeMapper.employeeDTOToAllInformationEmployeeDTO(
+                        employeeInformation,
+                        GeneralRestUtil.toExtraInformation(
+                                GeneralUtil.diff(employeeInformation.getDateAffiliationCompany(), new Date())
+                        ),
+                        GeneralRestUtil.toExtraInformation(
+                                GeneralUtil.diff(employeeInformation.getDateOfBirth(), new Date())
+                        ),
+                        viewPdf && !GeneralRestUtil.isNullOrBlank(employeeInformation.getStorageLocationReport()) ? iGetPdfS3Service.getPdf(employeeInformation.getStorageLocationReport()) : null
+                );
+            }
+
         }
 
         responseGeneral.setData(allInformation);

@@ -1,10 +1,12 @@
 package co.parameta.technical.test.rest.dto;
 
+import co.parameta.technical.test.commons.dto.PositionDTO;
+import co.parameta.technical.test.commons.dto.TypeDocumentDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * Data Transfer Object that represents the response returned after
@@ -36,7 +38,7 @@ public class ResponseEmployeeDTO {
     /**
      * Type of document code.
      */
-    private String typeDocument;
+    private TypeDocumentDTO typeDocument;
 
     /**
      * Employee document number.
@@ -46,22 +48,22 @@ public class ResponseEmployeeDTO {
     /**
      * Employee date of birth formatted as yyyy-MM-dd.
      */
-    private String dateOfBirth;
+    private Date dateOfBirth;
 
     /**
      * Company affiliation date formatted as yyyy-MM-dd.
      */
-    private String dateAffiliationCompany;
+    private Date dateAffiliationCompany;
 
     /**
      * Employee position code.
      */
-    private String position;
+    private PositionDTO position;
 
     /**
      * Employee salary.
      */
-    private BigDecimal salary;
+    private Double salary;
 
     /**
      * Calculated time linked to the company expressed in years,

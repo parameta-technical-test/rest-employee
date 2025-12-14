@@ -18,6 +18,6 @@ public interface IEmployeePdfGeneratorService {
      * @return a byte array representing the generated PDF file
      * @throws IllegalArgumentException if the provided employee is {@code null}
      */
-    byte[] generateEmployeeReport(EmployeeRequestDTO employee);
+    byte[] generateEmployeeReport(EmployeeRequestDTO employee, boolean isUpdate);
 
 }

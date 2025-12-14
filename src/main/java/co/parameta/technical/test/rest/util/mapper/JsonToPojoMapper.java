@@ -76,7 +76,7 @@ public interface JsonToPojoMapper {
         employeePojo.setPosition(positionPojo);
 
         employeePojo.setSalary(
-                GeneralUtil.get(employeeRequest::getSalary, null)
+                GeneralRestUtil.doubleToBigDecimal(GeneralUtil.mapToValueObject(GeneralUtil.get(employeeRequest::getSalary, null), Double.class, null))
         );
 
         AdministratorUserPojo administratorUserPojo = new AdministratorUserPojo();

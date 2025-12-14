@@ -14,7 +14,7 @@ import java.util.List;
  * retrieval of active Groovy validation rules.
  * </p>
  */
-@Repository("rest-script")
+@Repository("restScript")
 public interface ScriptValidationRepository extends JpaRepository<ScriptValidationEntity, String> {
 
     /**
@@ -30,8 +30,10 @@ public interface ScriptValidationRepository extends JpaRepository<ScriptValidati
     @Query("""
            SELECT sv
            FROM ScriptValidationEntity sv
-           WHERE sv.state = 1
+           WHERE sv.state = 1 and sv.group = 'VALIDATION'
            """)
     List<ScriptValidationEntity> searchActiveValidationsGroovie();
+
+    ScriptValidationEntity findByCode(String code);
 
 }

@@ -1,13 +1,12 @@
 package co.parameta.technical.test.rest.service.impl;
 
 import co.parameta.technical.test.commons.dto.SystemParameterDTO;
+import co.parameta.technical.test.commons.util.mapper.ScriptValidationMapper;
 import co.parameta.technical.test.commons.util.mapper.SystemParameterMapper;
 import co.parameta.technical.test.rest.dto.EmployeeRequestDTO;
+import co.parameta.technical.test.rest.repository.ScriptValidationRepository;
 import co.parameta.technical.test.rest.repository.SystemParameterRepository;
-import co.parameta.technical.test.rest.service.IEmployeePdfGeneratorService;
-import co.parameta.technical.test.rest.service.IMailDeliveryService;
-import co.parameta.technical.test.rest.service.IPrepareMailDeliveryService;
-import co.parameta.technical.test.rest.service.IS3PdfStorageService;
+import co.parameta.technical.test.rest.service.*;
 import co.parameta.technical.test.rest.util.helper.GeneralRestUtil;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +43,6 @@ import static co.parameta.technical.test.rest.util.helper.GeneralRestUtil.*;
  * </ul>
  * </p>
  *
- * <p>
- * The method {@link #prepareMailDelivery(EmployeeRequestDTO)} is executed asynchronously.
- * </p>
  */
 @Service
 @RequiredArgsConstructor
@@ -77,6 +73,12 @@ public class PrepareMailDeliveryService implements IPrepareMailDeliveryService {
      */
     private final IS3PdfStorageService is3PdfStorageService;
 
+    private final IGroovieScriptExecutorService iGroovieScriptExecutorService;
+
+    private final ScriptValidationRepository scriptValidationRepository;
+
+    private final ScriptValidationMapper scriptValidationMapper;
+
     /**
      * Prepares and sends the notification email for an employee.
      * <p>
@@ -105,39 +107,80 @@ public class PrepareMailDeliveryService implements IPrepareMailDeliveryService {
      */
     @Override
     @Async
-    public void prepareMailDelivery(EmployeeRequestDTO employeeRequest) throws MessagingException {
-        Map<String, String> parameters =
-                systemParameterMapper.toListDto(systemParameterRepository.searchAllParameters(
-                                List.of(
-                                        "EMAIL_SUBJECT",
-                                        "EMAIL_CONTENT",
-                                        "EMAIL_COPY",
-                                        "EMAIL_SEND_ATTACHMENT",
-                                        "SEND_EMAIL_WITH_COPY",
-                                        "SEND_EMAIL_WITH_BLIND_COPY",
-                                        "BLIND_COPY_EMAILS"
-                                )
-                        )).stream()
-                        .collect(Collectors.toMap(
-                                SystemParameterDTO::getName,
-                                SystemParameterDTO::getContent
-                        ));
+    public void prepareMailDelivery(EmployeeRequestDTO employeeRequest, boolean isUpdate) throws MessagingException {
+        Map<String, String> parameters;
+        boolean isUpdateWithParam = systemParameterMapper.toDto(systemParameterRepository.findByName("UPDATE_INFORMATION")).getContent().equals("1") && isUpdate;
+        boolean isSendAttachment;
+        String subject;
+        String content;
+        List<String> emailCopy;
+        List<String> blindCopyEmails;
+        Map<String, Object> extraValues = new HashMap<>();
+        extraValues.put("generalUtilRest", GeneralRestUtil.class);
+        if(isUpdateWithParam){
+            parameters =
+                    systemParameterMapper.toListDto(systemParameterRepository.searchAllParameters(
+                                    List.of(
+                                            "EMAIL_SUBJECT_UPDATE",
+                                            "EMAIL_CONTENT_UPDATE",
+                                            "EMAIL_COPY_UPDATE",
+                                            "EMAIL_SEND_ATTACHMENT_UPDATE",
+                                            "SEND_EMAIL_WITH_COPY_UPDATE",
+                                            "SEND_EMAIL_WITH_BLIND_COPY_UPDATE",
+                                            "BLIND_COPY_EMAILS_UPDATE"
+                                    )
+                            )).stream()
+                            .collect(Collectors.toMap(
+                                    SystemParameterDTO::getName,
+                                    SystemParameterDTO::getContent
+                            ));
+            isSendAttachment =parameters.get("EMAIL_SEND_ATTACHMENT_UPDATE").equals("1");
+            subject = parameters.get("EMAIL_SUBJECT_UPDATE");
+            extraValues.put("contentEmail", parameters.get("EMAIL_CONTENT_UPDATE"));
+            content = iGroovieScriptExecutorService.runScript(employeeRequest,extraValues, List.of(scriptValidationMapper.toDto(scriptValidationRepository.findByCode("CAST_CONTENT_EMAIL_UPDATE"))));
+            emailCopy = emailsToSend(parameters.get("EMAIL_COPY_UPDATE"), parameters.get("SEND_EMAIL_WITH_COPY_UPDATE"));
+            blindCopyEmails = emailsToSend(parameters.get("BLIND_COPY_EMAILS_UPDATE"), parameters.get("SEND_EMAIL_WITH_BLIND_COPY_UPDATE"));
+        }else{
+            parameters =
+                    systemParameterMapper.toListDto(systemParameterRepository.searchAllParameters(
+                                    List.of(
+                                            "EMAIL_SUBJECT",
+                                            "EMAIL_CONTENT",
+                                            "EMAIL_COPY",
+                                            "EMAIL_SEND_ATTACHMENT",
+                                            "SEND_EMAIL_WITH_COPY",
+                                            "SEND_EMAIL_WITH_BLIND_COPY",
+                                            "BLIND_COPY_EMAILS"
+                                    )
+                            )).stream()
+                            .collect(Collectors.toMap(
+                                    SystemParameterDTO::getName,
+                                    SystemParameterDTO::getContent
+                            ));
+            isSendAttachment =parameters.get("EMAIL_SEND_ATTACHMENT").equals("1");
+            subject = parameters.get("EMAIL_SUBJECT");
+            extraValues.put("contentEmail", parameters.get("EMAIL_CONTENT"));
+            content = iGroovieScriptExecutorService.runScript(employeeRequest,extraValues, List.of(scriptValidationMapper.toDto(scriptValidationRepository.findByCode("CAST_CONTENT_EMAIL"))));
+            emailCopy = emailsToSend(parameters.get("EMAIL_COPY"), parameters.get("SEND_EMAIL_WITH_COPY"));
+            blindCopyEmails = emailsToSend(parameters.get("BLIND_COPY_EMAILS"), parameters.get("SEND_EMAIL_WITH_BLIND_COPY"));
+        }
+
         byte[] file = null;
         String fileName = null;
-        if(parameters.get("EMAIL_SEND_ATTACHMENT").equals("1")){
-            file = iEmployeePdfGeneratorService.generateEmployeeReport(employeeRequest);
+        if(isSendAttachment){
+            file = iEmployeePdfGeneratorService.generateEmployeeReport(employeeRequest,isUpdate);
             fileName = generateName(employeeRequest.getNames(), employeeRequest.getLastNames(), employeeRequest.getTypeDocument(), employeeRequest.getDocumentNumber());
             is3PdfStorageService.uploadPdf(file, fileName, employeeRequest.getDocumentNumber(), employeeRequest.getTypeDocument());
         }
 
         iMailDeliveryService.sendText(
                 employeeRequest.getEmail(),
-                parameters.get("EMAIL_SUBJECT"),
-                parameters.get("EMAIL_CONTENT"),
+                subject,
+                content,
                 file,
                 fileName,
-                emailsToSend(parameters.get("EMAIL_COPY"), parameters.get("SEND_EMAIL_WITH_COPY")),
-                emailsToSend(parameters.get("BLIND_COPY_EMAILS"), parameters.get("SEND_EMAIL_WITH_BLIND_COPY"))
+                emailCopy,
+                blindCopyEmails
         );
     }
 
@@ -155,13 +198,11 @@ public class PrepareMailDeliveryService implements IPrepareMailDeliveryService {
      */
     private List<String> emailsToSend(String emailString, String paramVerPerm) {
         List<String> emails = new ArrayList<>();
-        if(!GeneralRestUtil.isNullOrBlank(emailString)){
-            if(paramVerPerm.equals("1")){
-                emails = Arrays.stream(emailString.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .toList();
-            }
+        if(!GeneralRestUtil.isNullOrBlank(emailString) && paramVerPerm.equals("1")){
+            emails = Arrays.stream(emailString.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
         }
         return emails;
     }
@@ -181,7 +222,7 @@ public class PrepareMailDeliveryService implements IPrepareMailDeliveryService {
      * @param documentNumber document number
      * @return a unique filename for the PDF report
      */
-    private static String generateName(
+    private String generateName(
             String names,
             String lastNames,
             String typeDocument,
